@@ -34,13 +34,13 @@ class BabelPublish {
             activityId: '',
             pageId: '',
         }
-        this.fromData = {}
+        this.formData = {}
         this.start()
     }
 
     async start() {
         //初始化配置信息
-        this.initConfigInfo();
+        await this.initConfigInfo();
         await this.upload();
     }
 
@@ -81,8 +81,8 @@ class BabelPublish {
             name: 'username',
         },
         {
-            type: 'password:',
-            message: 'Enterpassword',
+            type: 'pwd:',
+            message: 'Enter password',
             name: 'password',
         }
         ];
@@ -104,12 +104,13 @@ class BabelPublish {
         })
     }
     async setActivityInfo() {
-        await this.getActivityList().then(list => {
-            let choices = [];
-            list.forEach((item, index) => {
-                let option = { name: `${item.name}-${chalk.gray(item.mender)}`, value: index }
-                choices.push(option);
-            });
+        const list = await this.getActivityList();
+        let choices = [];
+        list.forEach((item, index) => {
+            let option = { name: `${item.name}-${chalk.gray(item.mender)}`, value: index }
+            choices.push(option);
+        });
+        return new Promise(resolve => {
             inquirer.prompt([
                 {
                     type: 'list',
@@ -130,8 +131,11 @@ class BabelPublish {
                 fs.writeFileSync(config_file_name, JSON.stringify(this.config), 'utf8', (err) => {
                     if (err) throw err;
                 })
+                resolve();
             })
         })
+
+
 
     }
     /**
@@ -169,18 +173,40 @@ class BabelPublish {
             })
         })
     }
+    async confirm() {
+        const prompts = [{
+            type: 'confirm',
+            message: `是否确认发布？ ${chalk.green(this.config.name)}`,
+            name: 'confirm',
+            suffix: chalk.gray('选择n重新选择活动')
+        }];
+        return new Promise(resolve => {
+            inquirer.prompt(prompts).then(async (answers) => {
+                if (answers.confirm) {
+                    resolve(true)
+                } else {
+                    await this.setActivityInfo()
+                    resolve(false);
+                }
+            })
+        })
+    }
     /**
      * 上传zip到通天塔
      * @return Promise 
      */
-    upload() {
-        
-        Object.assign(this.fromData,{
+    async upload() {
+
+        const next = await this.confirm()
+        if (!next) {
+            await this.upload();
+            return;
+        }
+
+        Object.assign(this.formData, {
             activityId: this.config.activityId,
             pageId: this.config.pageId
         })
-        console.log('发布项目信息：'+ this.config.name)
-        return ;
 
         spinner.start('upload..');
         return new Promise((resolve, reject) => {
@@ -189,7 +215,7 @@ class BabelPublish {
                     cookie: this.ticket
                 },
                 formData: {
-                    body: JSON.stringify(this.formdata),
+                    body: JSON.stringify(this.formData),
                     file: fs.createReadStream(distPath),
                 }
             }, (err, res, body) => {
@@ -204,16 +230,13 @@ class BabelPublish {
                         content,
                     } = result;
                     if (code == 0 && subCode == 0) {
-                        formdata.content = content;
+                        this.formData.content = content;
                         spinner.succeed('upload success')
                         resolve();
-
                     } else {
                         spinner.fail('upload fail')
                         console.log(chalk.yellow(returnMsg));
-
                     }
-
                 }
 
             });
