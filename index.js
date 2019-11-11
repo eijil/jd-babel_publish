@@ -42,6 +42,8 @@ class BabelPublish {
         //初始化配置信息
         await this.initConfigInfo();
         await this.upload();
+        await this.preview();
+        await this.deploy();
     }
 
     async initConfigInfo() {
@@ -242,6 +244,77 @@ class BabelPublish {
             });
         })
     }
+    async preview() {
+        spinner.start('preview..')
+        Object.assign(this.formData, {
+            changeFlag: 0,
+            deletedFileIdList: []
+        })
+        return new Promise((resolve, reject) => {
+            request.post(previewUri, {
+                headers: {
+                    cookie: this.ticket,
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                form: {
+                    body: JSON.stringify(this.formData)
+                }
+            }, (err, res, body) => {
+                if (err) {
+                    reject('login fail');
+                }
+                const {
+                    code,
+                    subCode,
+                } = JSON.parse(body);
+                if (code == 0 && subCode == 0) {
+                    spinner.succeed('preview success!');
+                    resolve()
+                } else {
+                    spinner.fail('preview fail')
+                }
+            })
+        })
+    }
+    /**
+     * 发布
+     */
+    async deploy() {
+
+        spinner.start('deploy..')
+        request.post(deployUri, {
+            headers: {
+                cookie: this.ticket,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            form: {
+                body: JSON.stringify(this.formData)
+            }
+        }, (err, res, body) => {
+
+            if (err) {
+                console.log(err)
+            }
+
+            const {
+                code,
+                subCode,
+                returnMsg
+            } = JSON.parse(body);
+            if (code == 0 && subCode == 0) {
+                spinner.succeed('deploy success!');
+                console.log('\n   ' + chalk.underline.green(this.config.url))
+                process.exit();
+            } else {
+
+                console.log(chalk.yellow(`发布失败，正在重新发布...`))
+                setTimeout(() => {
+                    this.deploy()
+                }, 1000);
+            }
+        })
+
+    }
     /** 
      * 查询你的活动列表
      */
@@ -281,12 +354,6 @@ class BabelPublish {
             })
         })
     }
-
-    readConfigFile() {
-
-    }
-
-
 }
 
 new BabelPublish()
