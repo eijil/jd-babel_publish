@@ -1,6 +1,5 @@
 #! /usr/bin/env node
 
-
 const path = require('path');
 const fs = require('fs');
 const request = require('request');
@@ -20,7 +19,6 @@ const deployUri = 'http://babel.jd.com/service/releasePageDev';
 const loginUri = 'http://ssa.jd.com/sso/login';
 const previewUri = 'http://babel.jd.com/service/previewPageDev'
 const queryUri = 'http://babel.jd.com/service/babelQueryActivity'
-
 
 
 class BabelPublish {
@@ -47,16 +45,15 @@ class BabelPublish {
     }
 
     async initConfigInfo() {
-        // if (!fs.existsSync(distPath)){
-        //     console.log(chalk.yellow('没有发现dist.zip文件,发布停止'))
-        //     return;
-        // }
+        if (!fs.existsSync(distPath)) {
+            console.log(chalk.yellow('没有发现dist.zip文件,发布停止'))
+            return;
+        }
         const exists = fs.existsSync(configPath);
         if (!exists) {
             await this.setUserInfo();
             await this.setActivityInfo();
         } else {
-            //检查登录是否成功
             let content = fs.readFileSync(configPath, 'utf8');
             try {
                 this.config = JSON.parse(content);
@@ -65,25 +62,21 @@ class BabelPublish {
                 console.log('jbp_config.json文件错误，删除后重试！')
                 return;
             }
+            //检查登录是否成功
             let isLogin = await this.login();
             if (!isLogin) {
                 await this.setUserInfo();
             }
-            if (!this.config.name) {
-                await this.setActivityInfo();
-            }
         }
-        // this.initUserInfo();
-
     }
-    setUserInfo() {
+    async setUserInfo() {
         const prompts = [{
             type: 'input',
             message: 'Enter erp:',
             name: 'username',
         },
         {
-            type: 'pwd:',
+            type: 'pwd',
             message: 'Enter password',
             name: 'password',
         }
@@ -97,7 +90,7 @@ class BabelPublish {
                 })
                 await this.login().then(login => {
                     if (!login) {
-                        this.setUserInfo();
+                       this.setUserInfo();
                     } else {
                         resolve()
                     }
@@ -180,7 +173,7 @@ class BabelPublish {
             type: 'confirm',
             message: `是否确认发布？ ${chalk.green(this.config.name)}`,
             name: 'confirm',
-            suffix: chalk.gray('选择n重新选择活动')
+            suffix: chalk.gray(' 选择n重新选择活动')
         }];
         return new Promise(resolve => {
             inquirer.prompt(prompts).then(async (answers) => {
@@ -356,4 +349,5 @@ class BabelPublish {
     }
 }
 
-new BabelPublish()
+
+module.exports = BabelPublish
