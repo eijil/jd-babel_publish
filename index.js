@@ -20,7 +20,7 @@ const loginUri = 'http://ssa.jd.com/sso/login';
 const previewUri = 'http://babel.jd.com/service/previewPageDev'
 const queryUri = 'http://babel.jd.com/service/babelQueryActivity'
 
-
+let test = 0;
 class BabelPublish {
     constructor() {
         this.ticket = ''
@@ -38,20 +38,21 @@ class BabelPublish {
 
     async start() {
         //初始化配置信息
-        await this.initConfigInfo();
+        await this.init();
         await this.upload();
         await this.preview();
         await this.deploy();
     }
 
-    async initConfigInfo() {
+    async init() {
         if (!fs.existsSync(distPath)) {
             console.log(chalk.yellow('没有发现dist.zip文件,发布停止'))
             return;
         }
         const exists = fs.existsSync(configPath);
+
         if (!exists) {
-            await this.setUserInfo();
+            await this.setAccount();
             await this.setActivityInfo();
         } else {
             let content = fs.readFileSync(configPath, 'utf8');
@@ -65,38 +66,42 @@ class BabelPublish {
             //检查登录是否成功
             let isLogin = await this.login();
             if (!isLogin) {
-                await this.setUserInfo();
+                await this.setAccount();
+            }
+            if (!this.config.name) {
+                await this.setActivityInfo();
             }
         }
     }
-    async setUserInfo() {
+    async setAccount() {
         const prompts = [{
             type: 'input',
             message: 'Enter erp:',
             name: 'username',
         },
         {
-            type: 'pwd',
+            type: 'input',
             message: 'Enter password',
             name: 'password',
         }
         ];
         return new Promise(resolve => {
             inquirer.prompt(prompts).then(async answers => {
-
                 Object.assign(this.config, {
                     erp: answers.username,
                     pwd: answers.password
                 })
-                await this.login().then(login => {
-                    if (!login) {
-                       this.setUserInfo();
+                await this.login().then(async login => {
+                    if (login) {
+                        resolve();
                     } else {
-                        resolve()
+                        await this.setAccount()
+                        resolve();
                     }
                 })
             })
         })
+
     }
     async setActivityInfo() {
         const list = await this.getActivityList();
@@ -112,7 +117,6 @@ class BabelPublish {
                     message: '选择一个你要上传的活动，只拉取最新的10条',
                     name: 'act',
                     choices: choices,
-
                 }
             ]).then(answ => {
                 let choice = list[answ['act']];

@@ -1,4 +1,4 @@
 
-const BabelPublish = require('@jmfe/jd_babel_publish')
+const BabelPublish = require('./index')
 
 new BabelPublish();
