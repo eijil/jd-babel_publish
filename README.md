@@ -1,6 +1,7 @@
-# 通天塔发布组件
+# 通天塔发布组件（非官方）
 
 将打包后的静态文件(dist.zip)发布到通天塔平台的组件
+
 
 ### 安装
 
@@ -11,11 +12,20 @@ jnpm install @jmfe/jd_babel_publish
 
 ### 使用
 ```js
-import BablePublish from 'jd_babel_publish'
+import BablePublish from '@jmfe/jd_babel_publish'
 
 new BabelPublish()
 
 ```
+
+### 参数 
+
+```js
+ {
+     distPath:'dist/dist.zip' //不传则默认根目录dist.zip
+ }
+```
+
 
 ### 说明
 
@@ -30,3 +40,5 @@ new BabelPublish()
 
 ### 注意
 jbp_config.json包含铭感信息，如项目需要发布到git记得添加进忽略文件
+
+非官方，所有涉及的接口都是从网上抓下来的，如发布不成请联系lijie8@jd.com

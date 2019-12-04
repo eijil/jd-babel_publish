@@ -1,10 +1,14 @@
 {
   "name": "@jmfe/jd_babel_publish",
-  "version": "1.0.6",
+  "version": "1.0.9",
   "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://git.jd.com/lijie67/jd_bable_publish"
   },
   "keywords": [],
   "author": "",

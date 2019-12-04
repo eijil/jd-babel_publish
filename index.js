@@ -20,9 +20,9 @@ const loginUri = 'http://ssa.jd.com/sso/login';
 const previewUri = 'http://babel.jd.com/service/previewPageDev'
 const queryUri = 'http://babel.jd.com/service/babelQueryActivity'
 
-let test = 0;
+
 class BabelPublish {
-    constructor() {
+    constructor(opt = {}) {
         this.ticket = ''
         this.config = {
             erp: '',
@@ -33,7 +33,16 @@ class BabelPublish {
             pageId: '',
         }
         this.formData = {}
+        
+        if (opt.hasOwnProperty('distPath')){
+            opt.distPath = path.join(cwd, opt.distPath)
+        }else{
+            opt.distPath = distPath
+        }
+        this.opt = opt;
+
         this.start()
+       
     }
 
     async start() {
@@ -45,9 +54,11 @@ class BabelPublish {
     }
 
     async init() {
-        if (!fs.existsSync(distPath)) {
+       
+        if (!fs.existsSync(this.opt.distPath)) {
             console.log(chalk.yellow('没有发现dist.zip文件,发布停止'))
-            return;
+            process.exit();
+            
         }
         const exists = fs.existsSync(configPath);
 
@@ -61,7 +72,8 @@ class BabelPublish {
             }
             catch{
                 console.log('jbp_config.json文件错误，删除后重试！')
-                return;
+                process.exit();
+                
             }
             //检查登录是否成功
             let isLogin = await this.login();
@@ -215,7 +227,7 @@ class BabelPublish {
                 },
                 formData: {
                     body: JSON.stringify(this.formData),
-                    file: fs.createReadStream(distPath),
+                    file: fs.createReadStream(this.opt.distPath),
                 }
             }, (err, res, body) => {
                 if (err) {
